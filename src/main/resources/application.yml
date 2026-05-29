@@ -1,0 +1,44 @@
+spring:
+  profiles:
+    active: dev
+  
+  # H2 메모리 DB 설정 (대용량 벌크 인서트 테스트에 적합)
+  datasource:
+    url: jdbc:h2:mem:filedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;COPY_METHOD=MAP
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # 1) 파일 업로드/다운로드 크기 제한 옵션 (Spring 기본 설정)
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB      # 개별 파일당 최대 크기 제한
+      max-request-size: 50MB   # 전체 요청당 최대 크기 제한
+      resolve-lazily: true
+
+# 커스텀 모듈 설정 (보안 필터 및 디렉토리)
+app:
+  file:
+    upload-dir: D:/projectRepo/file-processor/uploads
+    download-dir: D:/projectRepo/file-processor/downloads
+  
+  security:
+    file:
+      # Whitelist: 허용된 확장자 정규식 (csv, txt, xls, xlsx, json)
+      # 대소문자 구분 없이 매칭되도록 Regex 구성 예정
+      whitelist: "^.*\\.(csv|txt|xls|xlsx|json)$"
+      
+      # Blacklist: 차단 대상 확장자 및 Path Traversal(../ 등) 위험 문자 정규식
+      blacklist: "^.*(\\.\\./|\\.\\.\\\\|\\b(exe|sh|jsp|php|asp|js|html)\\b).*$"
+      
+logging:
+  level:
+    root: INFO
+    com.example.fileprocessor: DEBUG
+    org.springframework.jdbc.core.JdbcTemplate: DEBUG
