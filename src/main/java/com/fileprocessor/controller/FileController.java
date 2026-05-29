@@ -1,11 +1,11 @@
-package com.example.fileprocessor.controller;
+package com.fileprocessor.controller;
 
-import com.example.fileprocessor.model.AddressBook;
-import com.example.fileprocessor.model.TargetData;
-import com.example.fileprocessor.repository.BatchInsertRepository;
-import com.example.fileprocessor.security.FileSecurityService;
-import com.example.fileprocessor.service.AsyncFileProcessor;
-import com.example.fileprocessor.service.FileStorageService;
+import com.fileprocessor.model.AddressBook;
+import com.fileprocessor.model.TargetData;
+import com.fileprocessor.repository.BatchInsertRepository;
+import com.fileprocessor.security.FileSecurityService;
+import com.fileprocessor.service.AsyncFileProcessor;
+import com.fileprocessor.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -23,7 +23,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("api/files")
 @RequiredArgsConstructor
 public class FileController {
 

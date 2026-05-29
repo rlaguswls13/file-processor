@@ -1,7 +1,7 @@
-package com.example.fileprocessor.service;
+package com.fileprocessor.service;
 
-import com.example.fileprocessor.service.parser.FileParser;
-import com.example.fileprocessor.service.parser.FileParserFactory;
+import com.fileprocessor.service.parser.FileParser;
+import com.fileprocessor.service.parser.FileParserFactory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

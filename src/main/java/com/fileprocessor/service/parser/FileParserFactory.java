@@ -1,4 +1,4 @@
-package com.example.fileprocessor.service.parser;
+package com.fileprocessor.service.parser;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

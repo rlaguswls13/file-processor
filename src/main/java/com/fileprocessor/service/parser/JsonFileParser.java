@@ -1,8 +1,8 @@
-package com.example.fileprocessor.service.parser;
+package com.fileprocessor.service.parser;
 
-import com.example.fileprocessor.model.AddressBook;
-import com.example.fileprocessor.model.TargetData;
-import com.example.fileprocessor.repository.BatchInsertRepository;
+import com.fileprocessor.model.AddressBook;
+import com.fileprocessor.model.TargetData;
+import com.fileprocessor.repository.BatchInsertRepository;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;

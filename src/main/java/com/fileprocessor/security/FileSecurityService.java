@@ -1,9 +1,8 @@
-package com.example.fileprocessor.security;
+package com.fileprocessor.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,23 +14,39 @@ import java.util.regex.Pattern;
 @Service
 public class FileSecurityService {
 
-    private final Pattern whitelistPattern;
-    private final Pattern blacklistPattern;
+    private final Pattern safeDocumentsPattern;
+    private final Pattern imagesPattern;
+    private final Pattern textsPattern;
+    private final Pattern templatesPattern;
+    private final Pattern binariesPattern;
+    private final Pattern dangerousScriptsPattern;
 
     public FileSecurityService(
-            @Value("${app.security.file.whitelist}") String whitelistRegex,
-            @Value("${app.security.file.blacklist}") String blacklistRegex) {
+            @Value("${app.security.file.whitelist.safe-documents-regex}") String safeDocsRegex,
+            @Value("${app.security.file.whitelist.images-regex}") String imagesRegex,
+            @Value("${app.security.file.whitelist.texts-regex}") String textsRegex,
+            @Value("${app.security.file.whitelist.templates-regex}") String templatesRegex,
+            @Value("${app.security.file.blacklist.binaries-regex}") String binariesRegex,
+            @Value("${app.security.file.blacklist.dangerous-scripts-regex}") String scriptsRegex) {
         
-        log.info("Loading File Security Configurations...");
-        log.info("Whitelist regex: {}", whitelistRegex);
-        log.info("Blacklist regex: {}", blacklistRegex);
+        log.info("Loading Segmented File Security Configurations...");
+        log.info("Whitelist - Docs Regex: {}", safeDocsRegex);
+        log.info("Whitelist - Images Regex: {}", imagesRegex);
+        log.info("Whitelist - Texts Regex: {}", textsRegex);
+        log.info("Whitelist - Templates Regex: {}", templatesRegex);
+        log.info("Blacklist - Binaries Regex: {}", binariesRegex);
+        log.info("Blacklist - Scripts Regex: {}", scriptsRegex);
         
-        this.whitelistPattern = Pattern.compile(whitelistRegex, Pattern.CASE_INSENSITIVE);
-        this.blacklistPattern = Pattern.compile(blacklistRegex, Pattern.CASE_INSENSITIVE);
+        this.safeDocumentsPattern = Pattern.compile(safeDocsRegex, Pattern.CASE_INSENSITIVE);
+        this.imagesPattern = Pattern.compile(imagesRegex, Pattern.CASE_INSENSITIVE);
+        this.textsPattern = Pattern.compile(textsRegex, Pattern.CASE_INSENSITIVE);
+        this.templatesPattern = Pattern.compile(templatesRegex, Pattern.CASE_INSENSITIVE);
+        this.binariesPattern = Pattern.compile(binariesRegex, Pattern.CASE_INSENSITIVE);
+        this.dangerousScriptsPattern = Pattern.compile(scriptsRegex, Pattern.CASE_INSENSITIVE);
     }
 
     /**
-     * 파일명 및 경로 보안 검증 (Path Traversal 및 Regex 매칭)
+     * 파일명 및 경로 보안 검증 (Path Traversal 및 Regex 확장자 매칭)
      */
     public void validateFileName(String originalFilename) {
         if (originalFilename == null || originalFilename.isBlank()) {
@@ -44,19 +59,31 @@ public class FileSecurityService {
             throw new SecurityException("Potential Path Traversal attack detected.");
         }
 
-        // 2. Blacklist 정규식 매칭 검사
-        if (blacklistPattern.matcher(originalFilename).matches()) {
-            log.error("Blacklisted file pattern matched for filename: {}", originalFilename);
-            throw new SecurityException("Upload of this file type is prohibited (Blacklisted).");
+        // 2. 확장자 추출 및 매칭 검사
+        String extension = getFileExtension(originalFilename).toLowerCase().trim();
+
+        // 2-1. Blacklist 정규식 매칭 검사 (확장자만 검사)
+        if (binariesPattern.matcher(extension).matches()) {
+            log.error("Executable binary file blocked: {}. Extension: .{}", originalFilename, extension);
+            throw new SecurityException("Binary files (.jar, .exe, etc.) are strictly prohibited.");
+        }
+        if (dangerousScriptsPattern.matcher(extension).matches()) {
+            log.error("Dangerous script/system file blocked: {}. Extension: .{}", originalFilename, extension);
+            throw new SecurityException("Dangerous files that can harm the system are strictly prohibited.");
         }
 
-        // 3. Whitelist 정규식 매칭 검사
-        if (!whitelistPattern.matcher(originalFilename).matches()) {
-            log.error("File name does not match the whitelist: {}", originalFilename);
+        // 2-2. Whitelist 정규식 매칭 검사 (확장자만 검사)
+        boolean isWhitelisted = safeDocumentsPattern.matcher(extension).matches() ||
+                                imagesPattern.matcher(extension).matches() ||
+                                textsPattern.matcher(extension).matches() ||
+                                templatesPattern.matcher(extension).matches();
+
+        if (!isWhitelisted) {
+            log.error("File type not in whitelist: {}. Extension: .{}", originalFilename, extension);
             throw new SecurityException("Only allowed file types can be uploaded (Whitelist constraint).");
         }
 
-        log.debug("Filename '{}' passed security checks.", originalFilename);
+        log.debug("Filename '{}' passed security checks (Extension: .{}).", originalFilename, extension);
     }
 
     /**

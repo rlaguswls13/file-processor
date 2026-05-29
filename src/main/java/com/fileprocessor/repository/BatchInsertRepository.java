@@ -1,7 +1,7 @@
-package com.example.fileprocessor.repository;
+package com.fileprocessor.repository;
 
-import com.example.fileprocessor.model.AddressBook;
-import com.example.fileprocessor.model.TargetData;
+import com.fileprocessor.model.AddressBook;
+import com.fileprocessor.model.TargetData;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

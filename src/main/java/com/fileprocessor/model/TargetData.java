@@ -1,4 +1,4 @@
-package com.example.fileprocessor.model;
+package com.fileprocessor.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,11 +11,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AddressBook {
+public class TargetData {
     private Long id;
-    private String name;
-    private String phoneNumber;
-    private String email;
-    private String groupName;
+    private String userId;
+    private String actionPattern; // 행동패턴/이벤트
+    private String targetGroup;   // 타겟그룹코드
+    private Double score;         // 스코어
     private LocalDateTime createdAt;
 }

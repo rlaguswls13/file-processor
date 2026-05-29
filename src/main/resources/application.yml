@@ -30,15 +30,16 @@ app:
   
   security:
     file:
-      # Whitelist: 허용된 확장자 정규식 (csv, txt, xls, xlsx, json)
-      # 대소문자 구분 없이 매칭되도록 Regex 구성 예정
-      whitelist: "^.*\\.(csv|txt|xls|xlsx|json)$"
-      
-      # Blacklist: 차단 대상 확장자 및 Path Traversal(../ 등) 위험 문자 정규식
-      blacklist: "^.*(\\.\\./|\\.\\.\\\\|\\b(exe|sh|jsp|php|asp|js|html)\\b).*$"
-      
+      whitelist:
+        safe-documents-regex: "^(csv|xls|xlsx|json|pdf|doc|docx|ppt|pptx|zip)$"
+        images-regex: "^(jpg|jpeg|png|gif|bmp|webp|svg)$"
+        texts-regex: "^(txt|log)$"
+        templates-regex: "^(html|htm|email|tpl)$"
+      blacklist:
+        binaries-regex: "^(jar|exe|dll|sys|so|bin|war|class)$"
+        dangerous-scripts-regex: "^(bat|cmd|sh|bash|ps1|vbs|js|jse|wsf|scr|msi|reg|lnk|py|php|jsp|asp|aspx)$"
 logging:
   level:
     root: INFO
-    com.example.fileprocessor: DEBUG
+    com.fileprocessor: DEBUG
     org.springframework.jdbc.core.JdbcTemplate: DEBUG
