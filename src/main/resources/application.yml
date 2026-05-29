@@ -4,7 +4,7 @@ spring:
   
   # H2 메모리 DB 설정 (대용량 벌크 인서트 테스트에 적합)
   datasource:
-    url: jdbc:h2:mem:filedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;COPY_METHOD=MAP
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -25,11 +25,17 @@ spring:
 # 커스텀 모듈 설정 (보안 필터 및 디렉토리)
 app:
   file:
-    upload-dir: D:/projectRepo/file-processor/uploads
-    download-dir: D:/projectRepo/file-processor/downloads
+    temp-dir: "D:/projectRepo/file-processor/temp"
+    categories:
+      image: "D:/projectRepo/file-processor/uploads/images"
+      template: "D:/projectRepo/file-processor/uploads/templates"
+      text: "D:/projectRepo/file-processor/uploads/texts"
+      general: "D:/projectRepo/file-processor/uploads/documents"
+    download-dir: "D:/projectRepo/file-processor/downloads"
   
   security:
     file:
+      max-limit-bytes: 52428800
       whitelist:
         safe-documents-regex: "^(csv|xls|xlsx|json|pdf|doc|docx|ppt|pptx|zip)$"
         images-regex: "^(jpg|jpeg|png|gif|bmp|webp|svg)$"

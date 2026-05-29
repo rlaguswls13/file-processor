@@ -27,7 +27,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     
     // DB
-    runtimeOnly 'com.h2database:h2'
+    implementation 'com.h2database:h2'
     
     // 롬복
     compileOnly 'org.projectlombok:lombok'

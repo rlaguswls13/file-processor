@@ -1,7 +1,9 @@
 package com.fileprocessor.security;
 
+import com.fileprocessor.security.type.FileType;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -12,37 +14,34 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FileSecurityService {
 
-    private final Pattern safeDocumentsPattern;
-    private final Pattern imagesPattern;
-    private final Pattern textsPattern;
-    private final Pattern templatesPattern;
-    private final Pattern binariesPattern;
-    private final Pattern dangerousScriptsPattern;
+    private final FileSecurityProperties properties;
 
-    public FileSecurityService(
-            @Value("${app.security.file.whitelist.safe-documents-regex}") String safeDocsRegex,
-            @Value("${app.security.file.whitelist.images-regex}") String imagesRegex,
-            @Value("${app.security.file.whitelist.texts-regex}") String textsRegex,
-            @Value("${app.security.file.whitelist.templates-regex}") String templatesRegex,
-            @Value("${app.security.file.blacklist.binaries-regex}") String binariesRegex,
-            @Value("${app.security.file.blacklist.dangerous-scripts-regex}") String scriptsRegex) {
+    private Pattern safeDocumentsPattern;
+    private Pattern imagesPattern;
+    private Pattern textsPattern;
+    private Pattern templatesPattern;
+    private Pattern binariesPattern;
+    private Pattern dangerousScriptsPattern;
+
+    @PostConstruct
+    public void init() {
+        log.info("Loading Segmented File Security Configurations via DI Properties...");
+        log.info("Whitelist - Docs Regex: {}", properties.getWhitelist().getSafeDocumentsRegex());
+        log.info("Whitelist - Images Regex: {}", properties.getWhitelist().getImagesRegex());
+        log.info("Whitelist - Texts Regex: {}", properties.getWhitelist().getTextsRegex());
+        log.info("Whitelist - Templates Regex: {}", properties.getWhitelist().getTemplatesRegex());
+        log.info("Blacklist - Binaries Regex: {}", properties.getBlacklist().getBinariesRegex());
+        log.info("Blacklist - Scripts Regex: {}", properties.getBlacklist().getDangerousScriptsRegex());
         
-        log.info("Loading Segmented File Security Configurations...");
-        log.info("Whitelist - Docs Regex: {}", safeDocsRegex);
-        log.info("Whitelist - Images Regex: {}", imagesRegex);
-        log.info("Whitelist - Texts Regex: {}", textsRegex);
-        log.info("Whitelist - Templates Regex: {}", templatesRegex);
-        log.info("Blacklist - Binaries Regex: {}", binariesRegex);
-        log.info("Blacklist - Scripts Regex: {}", scriptsRegex);
-        
-        this.safeDocumentsPattern = Pattern.compile(safeDocsRegex, Pattern.CASE_INSENSITIVE);
-        this.imagesPattern = Pattern.compile(imagesRegex, Pattern.CASE_INSENSITIVE);
-        this.textsPattern = Pattern.compile(textsRegex, Pattern.CASE_INSENSITIVE);
-        this.templatesPattern = Pattern.compile(templatesRegex, Pattern.CASE_INSENSITIVE);
-        this.binariesPattern = Pattern.compile(binariesRegex, Pattern.CASE_INSENSITIVE);
-        this.dangerousScriptsPattern = Pattern.compile(scriptsRegex, Pattern.CASE_INSENSITIVE);
+        this.safeDocumentsPattern = Pattern.compile(properties.getWhitelist().getSafeDocumentsRegex(), Pattern.CASE_INSENSITIVE);
+        this.imagesPattern = Pattern.compile(properties.getWhitelist().getImagesRegex(), Pattern.CASE_INSENSITIVE);
+        this.textsPattern = Pattern.compile(properties.getWhitelist().getTextsRegex(), Pattern.CASE_INSENSITIVE);
+        this.templatesPattern = Pattern.compile(properties.getWhitelist().getTemplatesRegex(), Pattern.CASE_INSENSITIVE);
+        this.binariesPattern = Pattern.compile(properties.getBlacklist().getBinariesRegex(), Pattern.CASE_INSENSITIVE);
+        this.dangerousScriptsPattern = Pattern.compile(properties.getBlacklist().getDangerousScriptsRegex(), Pattern.CASE_INSENSITIVE);
     }
 
     /**
@@ -84,6 +83,60 @@ public class FileSecurityService {
         }
 
         log.debug("Filename '{}' passed security checks (Extension: .{}).", originalFilename, extension);
+    }
+
+    /**
+     * 특정 카테고리별 확장자 정밀 검증 (Path Traversal 방지 및 특정 Whitelist 카테고리 매칭)
+     */
+    public void validateFileNameByCategory(String originalFilename, String categoryName) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            throw new IllegalArgumentException("File name is empty or invalid.");
+        }
+
+        // 1. Path Traversal 차단 (경로 이탈 탐지)
+        if (originalFilename.contains("../") || originalFilename.contains("..\\")) {
+            log.error("Path traversal attempt detected in filename: {}", originalFilename);
+            throw new SecurityException("Potential Path Traversal attack detected.");
+        }
+
+        // 2. 확장자 추출 및 매칭 검사
+        String extension = getFileExtension(originalFilename).toLowerCase().trim();
+
+        // 2-1. Blacklist 정규식 매칭 검사 (확장자만 검사)
+        if (binariesPattern.matcher(extension).matches()) {
+            log.error("Executable binary file blocked: {}. Extension: .{}", originalFilename, extension);
+            throw new SecurityException("Binary files (.jar, .exe, etc.) are strictly prohibited.");
+        }
+        if (dangerousScriptsPattern.matcher(extension).matches()) {
+            log.error("Dangerous script/system file blocked: {}. Extension: .{}", originalFilename, extension);
+            throw new SecurityException("Dangerous files that can harm the system are strictly prohibited.");
+        }
+
+        // 2-2. 카테고리별 Whitelist 정밀 매칭
+        Pattern targetPattern;
+        switch (categoryName.toLowerCase().trim()) {
+            case "images":
+                targetPattern = imagesPattern;
+                break;
+            case "templates":
+                targetPattern = templatesPattern;
+                break;
+            case "texts":
+                targetPattern = textsPattern;
+                break;
+            case "safe-documents":
+                targetPattern = safeDocumentsPattern;
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown security validation category: " + categoryName);
+        }
+
+        if (!targetPattern.matcher(extension).matches()) {
+            log.error("File type not allowed for category '{}': {}. Extension: .{}", categoryName, originalFilename, extension);
+            throw new SecurityException("Upload of this file type is not allowed for category: " + categoryName);
+        }
+
+        log.debug("Filename '{}' passed security checks for category '{}' (Extension: .{}).", originalFilename, categoryName, extension);
     }
 
     /**

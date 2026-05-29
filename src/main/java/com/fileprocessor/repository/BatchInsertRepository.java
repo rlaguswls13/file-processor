@@ -2,9 +2,11 @@ package com.fileprocessor.repository;
 
 import com.fileprocessor.model.AddressBook;
 import com.fileprocessor.model.TargetData;
-import jakarta.annotation.PostConstruct;
+import com.fileprocessor.model.FileMetadata;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +22,11 @@ public class BatchInsertRepository {
     private final JdbcTemplate jdbcTemplate;
 
     /**
-     * 애플리케이션 시작 시, H2 데이터베이스 내 테스트 테이블을 자동으로 생성합니다. (스키마 초기화)
+     * 애플리케이션 구동 완료 후, H2 데이터베이스 내 테스트 테이블을 안전하게 생성합니다. (스키마 초기화)
      */
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void initSchema() {
-        log.info("Initializing H2 database schemas for AddressBook and TargetData...");
+        log.info("Initializing H2 database schemas for AddressBook and TargetData after application is ready...");
         
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS address_book (" +
                 "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
@@ -41,6 +43,18 @@ public class BatchInsertRepository {
                 "action_pattern VARCHAR(255)," +
                 "target_group VARCHAR(100)," +
                 "score DOUBLE," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                ")");
+        
+        jdbcTemplate.execute("DROP TABLE IF EXISTS uploaded_file");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS uploaded_file (" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                "original_name VARCHAR(255)," +
+                "stored_name VARCHAR(255)," +
+                "extension VARCHAR(50)," +
+                "uuid VARCHAR(100) UNIQUE," +
+                "file_size BIGINT," +
+                "upload_user VARCHAR(100)," +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                 ")");
         
@@ -103,5 +117,24 @@ public class BatchInsertRepository {
         
         long endTime = System.currentTimeMillis();
         log.info("Batch inserted {} TargetData records in {} ms", targetDataList.size(), (endTime - startTime));
+    }
+
+    /**
+     * 단순 업로드된 파일 정보 DB 저장 (FileMetadata 기반)
+     */
+    @Transactional
+    public void saveUploadedFileInfo(FileMetadata metadata) {
+        String sql = "INSERT INTO uploaded_file (original_name, stored_name, extension, uuid, file_size, upload_user, created_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+        jdbcTemplate.update(
+            sql, 
+            metadata.getOriginalName(), 
+            metadata.getRelativeStoredPath(), 
+            metadata.getExtension(), 
+            metadata.getUuid(), 
+            metadata.getFileSize(), 
+            metadata.getUploadUser()
+        );
+        log.info("Saved uploaded file metadata to DB [UUID: {}]", metadata.getUuid());
     }
 }
