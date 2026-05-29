@@ -1,4 +1,4 @@
-package com.fileprocessor.service;
+package com.fileprocessor.service.file;
 
 import com.fileprocessor.model.FileMetadata;
 import org.springframework.stereotype.Component;
@@ -6,21 +6,19 @@ import org.springframework.stereotype.Component;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Component
 public class FileMetadataGenerator {
 
-    /**
-     * 원본 파일 정보와 업로드 유저를 기반으로 고도화된 FileMetadata 객체를 자동 생성합니다.
-     */
     public FileMetadata generate(String originalName, long fileSize, String uploadUser) {
         String extension = getFileExtension(originalName);
         String uuid = UUID.randomUUID().toString();
         String secureStoredName = generateSecureName(originalName, uuid, extension);
-        
-        // 날짜 파티션 정보 빌드
-        String datePartition = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        String datePartition = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         return FileMetadata.builder()
                 .originalName(originalName)

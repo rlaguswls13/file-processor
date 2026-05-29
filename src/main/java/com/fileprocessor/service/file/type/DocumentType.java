@@ -1,4 +1,4 @@
-package com.fileprocessor.security.type;
+package com.fileprocessor.service.file.type;
 
 import lombok.Getter;
 

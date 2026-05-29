@@ -24,26 +24,33 @@ spring:
 
 # 커스텀 모듈 설정 (보안 필터 및 디렉토리)
 app:
+  async:
+    core-pool-size: 5
+    max-pool-size: 10
+    queue-capacity: 100
+    thread-name-prefix: "FileProcExecutor-"
   file:
     temp-dir: "D:/projectRepo/file-processor/temp"
+    temp-task-dir: "D:/projectRepo/file-processor/temp/task"
     categories:
       image: "D:/projectRepo/file-processor/uploads/images"
       template: "D:/projectRepo/file-processor/uploads/templates"
       text: "D:/projectRepo/file-processor/uploads/texts"
-      general: "D:/projectRepo/file-processor/uploads/documents"
-    download-dir: "D:/projectRepo/file-processor/downloads"
-  
+      document: "D:/projectRepo/file-processor/uploads/documents"
   security:
     file:
       max-limit-bytes: 52428800
       whitelist:
-        safe-documents-regex: "^(csv|xls|xlsx|json|pdf|doc|docx|ppt|pptx|zip)$"
-        images-regex: "^(jpg|jpeg|png|gif|bmp|webp|svg)$"
-        texts-regex: "^(txt|log)$"
-        templates-regex: "^(html|htm|email|tpl)$"
+        image: "^(jpg|jpeg|png|gif|bmp|webp|svg)$"
+        template: "^(html|htm|email|tpl)$"
+        text: "^(txt|log)$"
+        document: "^(csv|xls|xlsx|json|pdf|doc|docx|ppt|pptx|zip)$"
       blacklist:
-        binaries-regex: "^(jar|exe|dll|sys|so|bin|war|class)$"
-        dangerous-scripts-regex: "^(bat|cmd|sh|bash|ps1|vbs|js|jse|wsf|scr|msi|reg|lnk|py|php|jsp|asp|aspx)$"
+        binary: "^(jar|exe|dll|sys|so|bin|war|class)$"
+        script: "^(bat|cmd|sh|bash|ps1|vbs|js|jse|wsf|scr|msi|reg|lnk|py|php|jsp|asp|aspx)$"
+      tasklist:
+        line-demeter: "^(txt|csv|xls|xlsx|csv)$"
+        json-parser: "^(txt|json)$"
 logging:
   level:
     root: INFO

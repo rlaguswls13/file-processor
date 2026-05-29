@@ -9,12 +9,10 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class FileParserFactory {
 
-    private final CsvTxtFileParser csvTxtFileParser;
-    private final ExcelFileParser excelFileParser;
-    private final JsonFileParser jsonFileParser;
+    private final LineSeparatedFileParser lineSeparatedFileParser;
 
     /**
-     * 파일 확장자에 매핑되는 최적의 FileParser 구현체를 반환합니다.
+     * 파일 확장자에 매핑되는 최적의 FileParser 구현체를 반환합니다. (JSON/Excel 제외, 오로지 고성능 라인 텍스트 지원)
      */
     public FileParser getParser(String filename) {
         if (filename == null) {
@@ -26,14 +24,9 @@ public class FileParserFactory {
         switch (extension) {
             case "csv":
             case "txt":
-                return csvTxtFileParser;
-            case "xls":
-            case "xlsx":
-                return excelFileParser;
-            case "json":
-                return jsonFileParser;
+                return lineSeparatedFileParser;
             default:
-                throw new IllegalArgumentException("No suitable parser found for extension: " + extension);
+                throw new IllegalArgumentException("Unsupported file type. Only line-separated CSV/TXT are supported. Ext: " + extension);
         }
     }
 
